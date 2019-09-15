@@ -1,20 +1,20 @@
 package com.assignment.vo;
 
 public class UserVO {
-	
-	private final String emailId;
+
+	private final String email;
 	private final String firstName;
 	private final String lastName;
-	
-	public UserVO(String emailId, String firstName, String lastName) {
+
+	public UserVO(String email, String firstName, String lastName) {
 		super();
-		this.emailId = emailId;
+		this.email = email;
 		this.firstName = firstName;
 		this.lastName = lastName;
 	}
 
-	public String getEmailId() {
-		return emailId;
+	public String getEmail() {
+		return email;
 	}
 
 	public String getFirstName() {
@@ -24,7 +24,7 @@ public class UserVO {
 	public String getLastName() {
 		return lastName;
 	}
-	
-	
+
+
 
 }

@@ -11,24 +11,24 @@ public class User {
 	@Id
 	@Column(name="email")
 	private String email;
-	
+
 	@Column(name="first_name")
 	private String firstName;
-	
+
 	@Column(name="last_name")
 	private String lastName;
-	
+
 	@Column(name="password")
 	private String password;
-	
+
 	public User(){
-		
+
 	}
-	
+
 	public User(String email, String firstName, String lastName) {
 		this(email, firstName, lastName, null);
 	}
-	
+
 	public User(String email, String firstName, String lastName, String password) {
 		this.email = email;
 		this.firstName = firstName;
@@ -63,11 +63,11 @@ public class User {
 	public String getPassword() {
 		return password;
 	}
-	
+
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -97,5 +97,5 @@ public class User {
 	public String toString() {
 		return "User [emailId=" + email + ", firstName=" + firstName + ", lastName=" + lastName + "]";
 	}
-	
+
 }

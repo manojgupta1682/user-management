@@ -6,7 +6,7 @@ import java.util.List;
 import com.assignment.entity.User;
 
 public class ParameterValidationUtil {
-	
+
 	public static boolean validateEmail(String email) {
 		String regex = "^[\\w-_\\.+]*[\\w-_\\.]\\@([\\w]+\\.)+[\\w]+[\\w]$";
 		return email.matches(regex);

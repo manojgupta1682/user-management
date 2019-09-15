@@ -1,13 +1,13 @@
 package com.assignment.controller;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.assignment.entity.User;
 import com.assignment.service.UserService;
 import com.assignment.util.ParameterValidationUtil;
-import com.assignment.util.ResponseMapUtil;
 import com.assignment.util.Utils;
-import com.assignment.vo.UserVO;
 
 
 @RestController
@@ -35,142 +33,113 @@ public class UserController {
 
 	@ResponseBody
 	@RequestMapping("")
-	public Map<String,Object> getAllUsers(){
+	public <T> ResponseEntity<T> getAllUsers(){
 		List<User> userList = userService.getAllUser();
 		if(userList == null || userList.size() == 0) {
-			return ResponseMapUtil.getNoUserAvailableError();
+			return (ResponseEntity<T>) new ResponseEntity<>("No User Available",HttpStatus.OK);
 		}
-		return ResponseMapUtil.getSuccessResult(Utils.getUserVOList(userList));
+		return (ResponseEntity<T>) new ResponseEntity<>(Utils.getUserVOList(userList),HttpStatus.OK);
 	}  
 
 	@ResponseBody
 	@RequestMapping("/getByEmail/{email}")
-	public Map<String,Object> getUser(@PathVariable("email") String email){
+	public <T> ResponseEntity<T> getUser(@PathVariable("email") String email){
 		if(!ParameterValidationUtil.validateEmail(email)) {
-			return ResponseMapUtil.getFailureResult("Invalid Email - "+email);
+			return (ResponseEntity<T>) new ResponseEntity<>("Invalid Email - "+email,HttpStatus.BAD_REQUEST);
 		}
 		User usr = userService.getUserByEmail(email);
 		if(usr == null) {
-			return ResponseMapUtil.getUserNotAvailableError();
+			return (ResponseEntity<T>) new ResponseEntity<>("User not Available",HttpStatus.OK);
 		}
-		return ResponseMapUtil.getSuccessResult(new UserVO(usr.getEmail(),usr.getFirstName(),usr.getLastName()));
+		return (ResponseEntity<T>) new ResponseEntity<>(Utils.getUserVO(usr),HttpStatus.OK);
 	} 
 
 
-	  @ResponseBody
-	  @RequestMapping(value = "/create", method = RequestMethod.POST)
-	  public Map<String,Object> createUser(@RequestBody User user){
+	@ResponseBody
+	@RequestMapping(value = "/create", method = RequestMethod.POST)
+	public <T> ResponseEntity<T> createUser(@RequestBody User user) throws Exception{
 		List<String> validationErrors = ParameterValidationUtil.validateUser(user);
 		if(validationErrors != null) {
-			return ResponseMapUtil.getFailureResult(validationErrors);
+			return (ResponseEntity<T>) new ResponseEntity<>(validationErrors,HttpStatus.BAD_REQUEST);
 		}
-		try {
-			userService.createUser(user);
-		} catch (Exception e) {
-			logger.error("Error in creating user", e);
-			return ResponseMapUtil.getFailureResult(e.getMessage());
+		userService.createUser(user);
+		return (ResponseEntity<T>) new ResponseEntity<>("User Created Successfully",HttpStatus.CREATED);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/update/{email}", method = RequestMethod.PUT)
+	public <T> ResponseEntity<T> updateUser(@RequestBody User user, @PathVariable("email") String email) throws Exception{
+
+		if(!ParameterValidationUtil.validateEmail(email)) {
+			return (ResponseEntity<T>) new ResponseEntity<>("Invalid Email - "+email,HttpStatus.BAD_REQUEST);
 		}
-		return ResponseMapUtil.getSuccessResult();
-	  }
-	 
-	  @ResponseBody
-	  @RequestMapping(value = "/update/{email}", method = RequestMethod.PUT)
-	  public Map<String,Object> updateUser(@RequestBody User user, @PathVariable("email") String email){
-		  logger.info("i"+user.toString());
-		  if(!ParameterValidationUtil.validateEmail(email)) {
-				return ResponseMapUtil.getFailureResult("Invalid Email - "+email);
-		  }
-		  List<String> validationErrors = ParameterValidationUtil.validateUserForUpdate(user);
-		  logger.info("2"+user.toString());
-		  logger.info("i"+validationErrors);
-		  if(validationErrors != null) {
-				return ResponseMapUtil.getFailureResult(validationErrors);
-			}
-			try {
-				userService.updateUser(user, email);
-			} catch (Exception e) {
-				logger.error("Error in updating user", e);
-				return ResponseMapUtil.getFailureResult(e.getMessage());
-			}
-			return ResponseMapUtil.getSuccessResult();
-	    
-	  }
-	  
-	 
-	  @ResponseBody
-	  @RequestMapping(value = "/delete/{emailId}", method = RequestMethod.DELETE)
-	  public Map<String,Object> deleteUser(@PathVariable("emailId") String email){
-		  if(!ParameterValidationUtil.validateEmail(email)) {
-				return ResponseMapUtil.getFailureResult("Invalid Email - "+email);
-		  }
-		  try {
-			userService.deleteUser(email);
-		} catch (Exception e) {
-			logger.error("Error in deleting user", e);
-			return ResponseMapUtil.getFailureResult(e.getMessage());
+		List<String> validationErrors = ParameterValidationUtil.validateUserForUpdate(user);
+		if(validationErrors != null) {
+			return (ResponseEntity<T>) new ResponseEntity<>(validationErrors,HttpStatus.BAD_REQUEST);
 		}
-		  return ResponseMapUtil.getSuccessResult();
-	  }
-	  
-	  @ResponseBody
-	  @RequestMapping(value = "/changePassword/{email}", method = RequestMethod.POST)
-	  public Map<String,Object> changePassword(@PathVariable("email") String email,
-			  @RequestParam("oldPassword")  String oldPassword,
-			  @RequestParam("newPassword") String newPassword){
-		  
-		  List<String> validationErrors = new ArrayList<>();
-		  if(email == null) {
-			  validationErrors.add("email cannot be null");
-		  }
-		  if(oldPassword == null){
-			  validationErrors.add("old password cannot be null");
-		  }
-		  if(newPassword == null) {
-			  validationErrors.add("new password cannot be null");
-		  }
-		  if(validationErrors.size() > 0) {
-			  return ResponseMapUtil.getFailureResult(validationErrors);
-		  }
-		  if(!ParameterValidationUtil.validateEmail(email)) {
-				return ResponseMapUtil.getFailureResult("Invalid Email - "+email);
-		  }
-		  
-		try {
-			userService.changePassword(email, oldPassword, newPassword);
-		} catch (Exception e) {
-			logger.error("Error in changing password", e);
-			return ResponseMapUtil.getFailureResult(e.getMessage());
+		userService.updateUser(user, email);
+		return (ResponseEntity<T>) new ResponseEntity<>("User updated successfully",HttpStatus.OK);
+
+	}
+
+
+	@ResponseBody
+	@RequestMapping(value = "/delete/{emailId}", method = RequestMethod.DELETE)
+	public <T> ResponseEntity<T> deleteUser(@PathVariable("emailId") String email) throws Exception{
+		if(!ParameterValidationUtil.validateEmail(email)) {
+			return (ResponseEntity<T>) new ResponseEntity<>("Invalid Email - "+email,HttpStatus.BAD_REQUEST);
 		}
-		return ResponseMapUtil.getSuccessResult();
-	  }
-	  
-	  
-	  @ResponseBody
-	  @RequestMapping(value = "/login", method = RequestMethod.POST)
-	  public Map<String,Object> login(@RequestParam("email") String email,
-			  @RequestParam("password")  String password){
-		  
-		  List<String> validationErrors = new ArrayList<>();
-		  if(email == null) {
-			  validationErrors.add("email cannot be null");
-		  }
-		  if(password == null){
-			  validationErrors.add("password cannot be null");
-		  }
-		  if(validationErrors.size() > 0) {
-			  return ResponseMapUtil.getFailureResult(validationErrors);
-		  }
-		  if(!ParameterValidationUtil.validateEmail(email)) {
-				return ResponseMapUtil.getFailureResult("Invalid Email - "+email);
-		  }
-		String loginMsg = null;  
-		try {
-			loginMsg = userService.login(email, password);
-		} catch (Exception e) {
-			logger.error("Error in login", e);
-			return ResponseMapUtil.getFailureResult(e.getMessage());
+		userService.deleteUser(email);
+		return (ResponseEntity<T>) new ResponseEntity<>("User deleted successfully",HttpStatus.OK);
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/changePassword/{email}", method = RequestMethod.POST)
+	public <T> ResponseEntity<T> changePassword(@PathVariable("email") String email,
+			@RequestParam("oldPassword")  String oldPassword,
+			@RequestParam("newPassword") String newPassword) throws Exception{
+
+		List<String> validationErrors = new ArrayList<>();
+		if(email == null) {
+			validationErrors.add("email cannot be null");
 		}
-		return ResponseMapUtil.getSuccessResult(loginMsg);
-	  }
-	  
+		if(oldPassword == null){
+			validationErrors.add("old password cannot be null");
+		}
+		if(newPassword == null) {
+			validationErrors.add("new password cannot be null");
+		}
+		if(validationErrors.size() > 0) {
+			return (ResponseEntity<T>) new ResponseEntity<>(validationErrors,HttpStatus.BAD_REQUEST);
+		}
+		if(!ParameterValidationUtil.validateEmail(email)) {
+			return (ResponseEntity<T>) new ResponseEntity<>("Invalid Email - "+email,HttpStatus.BAD_REQUEST);
+		}
+		userService.changePassword(email, oldPassword, newPassword);
+		return (ResponseEntity<T>) new ResponseEntity<>("Password changed",HttpStatus.OK);
+	}
+
+
+	@ResponseBody
+	@RequestMapping(value = "/login", method = RequestMethod.POST)
+	public <T> ResponseEntity<T> login(@RequestParam("email") String email,
+			@RequestParam("password")  String password) throws Exception{
+
+		List<String> validationErrors = new ArrayList<>();
+		if(email == null) {
+			validationErrors.add("email cannot be null");
+		}
+		if(password == null){
+			validationErrors.add("password cannot be null");
+		}
+		if(validationErrors.size() > 0) {
+			return (ResponseEntity<T>) new ResponseEntity<>(validationErrors,HttpStatus.BAD_REQUEST);
+		}
+		if(!ParameterValidationUtil.validateEmail(email)) {
+			return (ResponseEntity<T>) new ResponseEntity<>("Invalid Email - "+email,HttpStatus.BAD_REQUEST);
+		}
+		String loginMsg = userService.login(email, password);
+		return (ResponseEntity<T>) new ResponseEntity<>(loginMsg,HttpStatus.OK);
+	}
+
 }
