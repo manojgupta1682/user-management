@@ -18,11 +18,11 @@ public class ParameterValidationUtil {
 			errorList.add("Please provide email, first name, last name and password");
 			return errorList;
 		}
-		if(user.getEmailId() == null){
+		if(user.getEmail() == null){
 			errorList.add("email cannot be blank");
 		}
-		else if(!validateEmail(user.getEmailId())) {
-			errorList.add("invalid email - "+user.getEmailId());
+		else if(!validateEmail(user.getEmail())) {
+			errorList.add("invalid email - "+user.getEmail());
 		}
 		if(user.getFirstName() == null){
 			errorList.add("first name cannot be blank");
@@ -42,8 +42,8 @@ public class ParameterValidationUtil {
 			errorList.add("Please provide atleast email or first name or last name for update ");
 			return errorList;
 		}
-		if(user.getEmailId() != null && !validateEmail(user.getEmailId())){
-			errorList.add("invalid email - "+user.getEmailId());
+		if(user.getEmail() != null && !validateEmail(user.getEmail())){
+			errorList.add("invalid email - "+user.getEmail());
 		}
 		if(user.getPassword() != null) {
 			errorList.add("password cannot be updated, to update password call changePassword API");

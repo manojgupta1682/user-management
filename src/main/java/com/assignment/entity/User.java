@@ -1,36 +1,47 @@
 package com.assignment.entity;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "user")
 public class User {
+	@Id
+	@Column(name="email")
+	private String email;
 	
-	private String emailId;
-	
+	@Column(name="first_name")
 	private String firstName;
 	
+	@Column(name="last_name")
 	private String lastName;
 	
+	@Column(name="password")
 	private String password;
 	
 	public User(){
 		
 	}
 	
-	public User(String emailId, String firstName, String lastName) {
-		this(emailId, firstName, lastName, null);
+	public User(String email, String firstName, String lastName) {
+		this(email, firstName, lastName, null);
 	}
 	
-	public User(String emailId, String firstName, String lastName, String password) {
-		this.emailId = emailId;
+	public User(String email, String firstName, String lastName, String password) {
+		this.email = email;
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.password = password;
 	}
 
-	public String getEmailId() {
-		return emailId;
+	public String getEmail() {
+		return email;
 	}
 
-	public void setEmailId(String emailId) {
-		this.emailId = emailId;
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 	public String getFirstName() {
@@ -61,7 +72,7 @@ public class User {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((emailId == null) ? 0 : emailId.hashCode());
+		result = prime * result + ((email == null) ? 0 : email.hashCode());
 		return result;
 	}
 
@@ -74,17 +85,17 @@ public class User {
 		if (getClass() != obj.getClass())
 			return false;
 		User other = (User) obj;
-		if (emailId == null) {
-			if (other.emailId != null)
+		if (email == null) {
+			if (other.email != null)
 				return false;
-		} else if (!emailId.equals(other.emailId))
+		} else if (!email.equals(other.email))
 			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "User [emailId=" + emailId + ", firstName=" + firstName + ", lastName=" + lastName + "]";
+		return "User [emailId=" + email + ", firstName=" + firstName + ", lastName=" + lastName + "]";
 	}
 	
 }

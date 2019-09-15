@@ -2,6 +2,7 @@ package com.assignment.service;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.crypto.BadPaddingException;
@@ -21,48 +22,45 @@ import com.assignment.vo.UserVO;
 @Service
 public class UserServiceImpl implements UserService{
 
-	@Autowired
-	private UserRepository userRepository;
 
-	@Autowired
-	private AESCipher cipher;
-	
+	private final UserRepository userRepository;
+
 	private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
+	public UserServiceImpl(UserRepository userRepository) {
+		this.userRepository = userRepository;
+	}
 	@Override
-	public UserVO getUserByEmail(String email) {
-		UserVO usrVO = null;
-		User usr = userRepository.getUser(email);
-		if(usr != null) {
-			usrVO = new UserVO(usr.getEmailId(), usr.getFirstName(), usr.getLastName());
+	public User getUserByEmail(String email) {
+		return userRepository.findByEmail(email);
+	}
+
+	@Override
+	public List<User> getAllUser() {
+		return (List<User>) userRepository.findAll();
+	}
+
+	@Override
+	public User createUser(User user) throws Exception {
+		User existingUser = userRepository.findByEmail(user.getEmail());
+		logger.info("existingUser - "+existingUser);
+		if(existingUser != null) {
+			throw new Exception("User exist, hence cannot create new User.");
 		}
-		return usrVO;
-	}
-
-	@Override
-	public List<UserVO> getAllUser() {
-		Collection<User> colls =  userRepository.getAllUser();
-		return colls.stream()
-				.map(u -> new UserVO(u.getEmailId(), u.getFirstName(), u.getLastName()))
-				.collect(Collectors.toList());
-	}
-
-	@Override
-	public void createUser(User user) throws Exception {
 		try {
 			logger.info("Service created inside- "+user.toString());
-			user.setPassword(cipher.getEncryptedText(user.getPassword()));
+			user.setPassword(AESCipher.encrypt(user.getPassword()));
 		} catch (IllegalBlockSizeException | BadPaddingException e) {
 			logger.error("Exception in encrypting password" , e);
 			throw new Exception("Exception in encrypting password",e);
 		}
 		logger.info("Service created - "+user.toString());
-		userRepository.createUser(user);
+		return userRepository.save(user);
 	}
 
 	@Override
-	public void updateUser(User user, String oldEmail) throws Exception {
-		User usr = userRepository.getUser(oldEmail);
+	public User updateUser(User user, String oldEmail) throws Exception {
+		User usr = userRepository.findByEmail(oldEmail);
 		if(usr == null) {
 			throw new Exception(oldEmail+" - User does not Exist");
 		}else if(usr.equals(user)) {
@@ -71,7 +69,7 @@ public class UserServiceImpl implements UserService{
 			}if(user.getLastName() != null) {
 				usr.setLastName(user.getLastName());
 			}
-			userRepository.saveUser(user);
+			return userRepository.save(user);
 		}else {
 			if(user.getFirstName() == null) {
 				user.setFirstName(usr.getFirstName());
@@ -79,44 +77,47 @@ public class UserServiceImpl implements UserService{
 				user.setLastName(usr.getLastName());
 			}
 			user.setPassword(usr.getPassword());
-			userRepository.deleteUser(usr.getEmailId());
-			userRepository.createUser(user);
+			userRepository.deleteById(usr.getEmail());
+			return userRepository.save(user);
 		}
 	}
 
 	@Override
 	public void deleteUser(String email) throws Exception {
-		User usr = userRepository.getUser(email);
+		User usr = userRepository.findByEmail(email);
 		if(usr == null) {
 			throw new Exception(email+" - User does not Exist");
 		}
-		userRepository.deleteUser(email);
+		userRepository.deleteById(email);
 	}
 
 	public void changePassword(String email, String oldPassword, String newPassword) throws Exception {
-		User usr = userRepository.getUser(email);
+		User usr = userRepository.findByEmail(email);
 		if(usr == null) {
 			throw new Exception("User does not exist");
 		}
-		if(!oldPassword.equals(cipher.getDecryptedText(usr.getPassword()))) {
+		if(!oldPassword.equals(AESCipher.decrypt(usr.getPassword()))) {
+			logger.error("old password="+AESCipher.decrypt(usr.getPassword()));
 			throw new Exception("Old password is not same");
 		}
 		try {
-			usr.setPassword(cipher.getEncryptedText(newPassword));
+			usr.setPassword(AESCipher.encrypt(newPassword));
 		} catch (IllegalBlockSizeException | BadPaddingException e) {
-			throw new Exception("Exception is encrypting password");
+			throw new Exception("Exception in encrypting password");
 		}
+		userRepository.save(usr);
+		
 	}
 
 	public String login(String email, String password) throws Exception {
-		User usr = userRepository.getUser(email);
+		User usr = userRepository.findByEmail(email);
 		if(usr == null) {
 			throw new Exception("Invalid User");
 		}
-		if(!password.equals(cipher.getDecryptedText(usr.getPassword()))) {
-			throw new Exception("password doesn't match");
+		if(!password.equals(AESCipher.decrypt(usr.getPassword()))) {
+			return "Access denied";
 		}
 		
-		return "Welcome - "+usr.getFirstName()+" "+usr.getLastName();
+		return "Welcome "+usr.getFirstName()+" "+usr.getLastName()+"!";
 	}
 }

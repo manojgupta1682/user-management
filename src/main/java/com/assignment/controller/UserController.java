@@ -1,5 +1,7 @@
 package com.assignment.controller;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,6 +20,7 @@ import com.assignment.entity.User;
 import com.assignment.service.UserService;
 import com.assignment.util.ParameterValidationUtil;
 import com.assignment.util.ResponseMapUtil;
+import com.assignment.util.Utils;
 import com.assignment.vo.UserVO;
 
 
@@ -32,11 +36,11 @@ public class UserController {
 	@ResponseBody
 	@RequestMapping("")
 	public Map<String,Object> getAllUsers(){
-		List<UserVO> userList = userService.getAllUser();
+		List<User> userList = userService.getAllUser();
 		if(userList == null || userList.size() == 0) {
 			return ResponseMapUtil.getNoUserAvailableError();
 		}
-		return ResponseMapUtil.getSuccessResult(userList);
+		return ResponseMapUtil.getSuccessResult(Utils.getUserVOList(userList));
 	}  
 
 	@ResponseBody
@@ -45,11 +49,11 @@ public class UserController {
 		if(!ParameterValidationUtil.validateEmail(email)) {
 			return ResponseMapUtil.getFailureResult("Invalid Email - "+email);
 		}
-		UserVO usr = userService.getUserByEmail(email);
+		User usr = userService.getUserByEmail(email);
 		if(usr == null) {
 			return ResponseMapUtil.getUserNotAvailableError();
 		}
-		return ResponseMapUtil.getSuccessResult(usr);
+		return ResponseMapUtil.getSuccessResult(new UserVO(usr.getEmail(),usr.getFirstName(),usr.getLastName()));
 	} 
 
 
@@ -63,6 +67,7 @@ public class UserController {
 		try {
 			userService.createUser(user);
 		} catch (Exception e) {
+			logger.error("Error in creating user", e);
 			return ResponseMapUtil.getFailureResult(e.getMessage());
 		}
 		return ResponseMapUtil.getSuccessResult();
@@ -84,6 +89,7 @@ public class UserController {
 			try {
 				userService.updateUser(user, email);
 			} catch (Exception e) {
+				logger.error("Error in updating user", e);
 				return ResponseMapUtil.getFailureResult(e.getMessage());
 			}
 			return ResponseMapUtil.getSuccessResult();
@@ -100,8 +106,71 @@ public class UserController {
 		  try {
 			userService.deleteUser(email);
 		} catch (Exception e) {
+			logger.error("Error in deleting user", e);
 			return ResponseMapUtil.getFailureResult(e.getMessage());
 		}
 		  return ResponseMapUtil.getSuccessResult();
 	  }
+	  
+	  @ResponseBody
+	  @RequestMapping(value = "/changePassword/{email}", method = RequestMethod.POST)
+	  public Map<String,Object> changePassword(@PathVariable("email") String email,
+			  @RequestParam("oldPassword")  String oldPassword,
+			  @RequestParam("newPassword") String newPassword){
+		  
+		  List<String> validationErrors = new ArrayList<>();
+		  if(email == null) {
+			  validationErrors.add("email cannot be null");
+		  }
+		  if(oldPassword == null){
+			  validationErrors.add("old password cannot be null");
+		  }
+		  if(newPassword == null) {
+			  validationErrors.add("new password cannot be null");
+		  }
+		  if(validationErrors.size() > 0) {
+			  return ResponseMapUtil.getFailureResult(validationErrors);
+		  }
+		  if(!ParameterValidationUtil.validateEmail(email)) {
+				return ResponseMapUtil.getFailureResult("Invalid Email - "+email);
+		  }
+		  
+		try {
+			userService.changePassword(email, oldPassword, newPassword);
+		} catch (Exception e) {
+			logger.error("Error in changing password", e);
+			return ResponseMapUtil.getFailureResult(e.getMessage());
+		}
+		return ResponseMapUtil.getSuccessResult();
+	  }
+	  
+	  
+	  @ResponseBody
+	  @RequestMapping(value = "/login", method = RequestMethod.POST)
+	  public Map<String,Object> login(@RequestParam("email") String email,
+			  @RequestParam("password")  String password){
+		  
+		  List<String> validationErrors = new ArrayList<>();
+		  if(email == null) {
+			  validationErrors.add("email cannot be null");
+		  }
+		  if(password == null){
+			  validationErrors.add("password cannot be null");
+		  }
+		  if(validationErrors.size() > 0) {
+			  return ResponseMapUtil.getFailureResult(validationErrors);
+		  }
+		  if(!ParameterValidationUtil.validateEmail(email)) {
+				return ResponseMapUtil.getFailureResult("Invalid Email - "+email);
+		  }
+		String loginMsg = null;  
+		try {
+			loginMsg = userService.login(email, password);
+		} catch (Exception e) {
+			logger.error("Error in login", e);
+			return ResponseMapUtil.getFailureResult(e.getMessage());
+		}
+		return ResponseMapUtil.getSuccessResult(loginMsg);
+	  }
+	  
 }

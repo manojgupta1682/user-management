@@ -3,6 +3,7 @@ package com.assignment.repository;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,8 +12,8 @@ import org.springframework.stereotype.Repository;
 import com.assignment.controller.UserController;
 import com.assignment.entity.User;
 
-@Repository
-public class UserRepositoryImpl implements UserRepository{
+
+public class UserRepositoryImpl {
 	
 	private Map<String,User> userStorage;
 	
@@ -32,11 +33,11 @@ public class UserRepositoryImpl implements UserRepository{
 	
 	public void createUser(User user) {
 		logger.info("created - "+user.toString());
-		userStorage.put(user.getEmailId(), user);
+		userStorage.put(user.getEmail(), user);
 	}
 	
 	public void saveUser(User user) {
-		User usr = userStorage.get(user.getEmailId());
+		User usr = userStorage.get(user.getEmail());
 		usr.setFirstName(user.getFirstName());
 		usr.setLastName(user.getLastName());
 	}
@@ -47,5 +48,6 @@ public class UserRepositoryImpl implements UserRepository{
 		}
 		userStorage.remove(emailId);
 	}
-	
+
+
 }
